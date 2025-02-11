@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:metromony/pages/aboutus.dart';
 import 'package:metromony/pages/favortitemember.dart';
 import 'package:metromony/pages/editmember.dart';
 import 'package:metromony/pages/addmember.dart';
@@ -13,12 +14,14 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _page = 0;
   GlobalKey<CurvedNavigationBarState> _bottomNavigationKey = GlobalKey();
+  List<Map<String, String>> favoriteUsers = [];
 
-  List<Map<String, String>> membersList = [];
-
-  void _handleAddMember(Map<String, String> memberData) {
+  void updateFavoriteUsers(List<dynamic> users) {
     setState(() {
-      membersList.add(memberData);
+      favoriteUsers = users
+          .where((user) => user['isFavorite'] == 'true')
+          .map((user) => Map<String, String>.from(user))
+          .toList();
     });
   }
 
@@ -28,11 +31,9 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _pages = [
-      const UsersListPage(),
-      AddMemberPage(onAddMember: _handleAddMember),
-      FavoriteMember(
-        users: [],
-      ),
+      UsersListPage(onFavoriteUpdate: updateFavoriteUsers),
+      FavoriteMember(users: favoriteUsers),
+      AboutUsPage(),
     ];
   }
 
@@ -146,9 +147,9 @@ class _MainScreenState extends State<MainScreen> {
           items: [
             Icon(Icons.person_add,
                 size: 30, color: _page == 0 ? Colors.white : _gradients[0][0]),
-            Icon(Icons.edit,
+            Icon(Icons.favorite,
                 size: 30, color: _page == 1 ? Colors.white : _gradients[1][0]),
-            Icon(Icons.star,
+            Icon(Icons.info,
                 size: 30, color: _page == 2 ? Colors.white : _gradients[2][0]),
           ],
           onTap: (index) => setState(() => _page = index),

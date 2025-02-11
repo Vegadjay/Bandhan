@@ -7,13 +7,10 @@ class FavoriteMember extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final favoriteUsers =
-        users.where((user) => user['isFavorite'] == 'true').toList();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Favorite Members'),
-        backgroundColor: const Color(0xFFFF6B6B),
+        backgroundColor: const Color(0xFF4ECDC4),
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -21,32 +18,25 @@ class FavoriteMember extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)],
+            colors: [Color(0xFF4ECDC4), Color(0xFF76E4E2)],
           ),
         ),
-        child: favoriteUsers.isEmpty
+        child: users.isEmpty
             ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.favorite_border,
-                        size: 64, color: Colors.white.withOpacity(0.8)),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No favorite members yet',
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.white.withOpacity(0.8),
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'No favorite members yet',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               )
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: favoriteUsers.length,
+                itemCount: users.length,
                 itemBuilder: (context, index) {
-                  final user = favoriteUsers[index];
+                  final user = users[index];
                   return Card(
                     margin: const EdgeInsets.only(bottom: 16),
                     elevation: 5,
@@ -56,7 +46,7 @@ class FavoriteMember extends StatelessWidget {
                     child: ListTile(
                       contentPadding: const EdgeInsets.all(16),
                       leading: CircleAvatar(
-                        backgroundColor: const Color(0xFFFF6B6B),
+                        backgroundColor: const Color(0xFF4ECDC4),
                         radius: 30,
                         child: Text(
                           user['name']?[0] ?? '',
@@ -83,10 +73,6 @@ class FavoriteMember extends StatelessWidget {
                           Text(user['mobile'] ?? ''),
                           Text('${user['age']} years • ${user['gender']}'),
                         ],
-                      ),
-                      trailing: const Icon(
-                        Icons.favorite,
-                        color: Color(0xFFFF6B6B),
                       ),
                     ),
                   );

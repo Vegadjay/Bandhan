@@ -3,14 +3,17 @@ import 'package:metromony/pages/addmember.dart';
 import 'addmember.dart';
 
 class UsersListPage extends StatefulWidget {
-  const UsersListPage({super.key});
+  final Function(List) onFavoriteUpdate;
+
+  const UsersListPage({Key? key, required this.onFavoriteUpdate})
+      : super(key: key);
 
   @override
-  State<UsersListPage> createState() => _UsersListPageState();
+  State createState() => _UsersListPageState();
 }
 
 class _UsersListPageState extends State<UsersListPage> {
-  List<Map<String, String>> users = [
+  List users = [
     {
       'name': 'John Doe',
       'email': 'john@example.com',
@@ -23,12 +26,27 @@ class _UsersListPageState extends State<UsersListPage> {
       'country': 'USA',
       'maritalStatus': 'Single',
       'salaryRange': '₹50,000 - ₹80,000',
-      'isFavorite': 'false', // Added favorite field
+      'isFavorite': 'false',
     },
+    {
+      'name': 'Jane Smith',
+      'email': 'jane@example.com',
+      'mobile': '9876543210',
+      'address': '456 Park Ave, London',
+      'age': '28',
+      'gender': 'Female',
+      'profession': 'Data Scientist',
+      'cast': 'Christian',
+      'country': 'UK',
+      'maritalStatus': 'Single',
+      'salaryRange': '₹60,000 - ₹90,000',
+      'isFavorite': 'false',
+    }
   ];
 
   String searchQuery = '';
-  List<Map<String, String>> filteredUsers = [];
+  List filteredUsers = [];
+  bool showOnlyFavorites = false;
 
   @override
   void initState() {
@@ -39,21 +57,40 @@ class _UsersListPageState extends State<UsersListPage> {
   void _filterUsers(String query) {
     setState(() {
       searchQuery = query.toLowerCase();
-      if (query.isEmpty) {
-        filteredUsers = List.from(users);
+      if (showOnlyFavorites) {
+        _showFavoriteUsers();
       } else {
-        filteredUsers = users.where((user) {
-          final name = user['name']?.toLowerCase() ?? '';
-          final age = user['age']?.toLowerCase() ?? '';
-          final profession = user['profession']?.toLowerCase() ?? '';
-          final gender = user['gender']?.toLowerCase() ?? '';
+        if (query.isEmpty) {
+          filteredUsers = List.from(users);
+        } else {
+          filteredUsers = users.where((user) {
+            final name = user['name']?.toLowerCase() ?? '';
+            final age = user['age']?.toLowerCase() ?? '';
+            final profession = user['profession']?.toLowerCase() ?? '';
+            final gender = user['gender']?.toLowerCase() ?? '';
 
-          return name.contains(searchQuery) ||
-              age.contains(searchQuery) ||
-              profession.contains(searchQuery) ||
-              gender.contains(searchQuery);
-        }).toList();
+            return name.contains(searchQuery) ||
+                age.contains(searchQuery) ||
+                profession.contains(searchQuery) ||
+                gender.contains(searchQuery);
+          }).toList();
+        }
       }
+    });
+  }
+
+  void _showFavoriteUsers() {
+    setState(() {
+      showOnlyFavorites = true;
+      filteredUsers =
+          users.where((user) => user['isFavorite'] == 'true').toList();
+    });
+  }
+
+  void _showAllUsers() {
+    setState(() {
+      showOnlyFavorites = false;
+      _filterUsers(searchQuery);
     });
   }
 
@@ -62,8 +99,13 @@ class _UsersListPageState extends State<UsersListPage> {
       final userIndex = users.indexOf(filteredUsers[index]);
       users[userIndex]['isFavorite'] =
           (users[userIndex]['isFavorite'] == 'true' ? 'false' : 'true');
-      filteredUsers = List.from(users);
-      _filterUsers(searchQuery);
+      if (showOnlyFavorites) {
+        _showFavoriteUsers();
+      } else {
+        filteredUsers = List.from(users);
+        _filterUsers(searchQuery);
+      }
+      widget.onFavoriteUpdate(users);
     });
   }
 
@@ -73,7 +115,7 @@ class _UsersListPageState extends State<UsersListPage> {
       MaterialPageRoute(
         builder: (context) => AddMemberPage(
           onAddMember: (userData) {
-            userData['isFavorite'] = 'false'; // Initialize favorite status
+            userData['isFavorite'] = 'false';
             setState(() {
               users.add(userData);
               _filterUsers(searchQuery);
@@ -308,18 +350,62 @@ class _UsersListPageState extends State<UsersListPage> {
     );
   }
 
+  void _showMenu() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.person_add, color: Color(0xFFFF6B6B)),
+                title: const Text('Add Member'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _addNewUser();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.favorite, color: Color(0xFFFF6B6B)),
+                title: const Text('Favorite Users'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showFavoriteUsers();
+                },
+              ),
+              if (showOnlyFavorites)
+                ListTile(
+                  leading: const Icon(Icons.people, color: Color(0xFFFF6B6B)),
+                  title: const Text('Show All Users'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showAllUsers();
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Users List'),
+        title: Text(showOnlyFavorites ? 'Favorite Users' : 'Users List'),
         backgroundColor: const Color(0xFFFF6B6B),
         foregroundColor: Colors.white,
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _addNewUser,
+        onPressed: _showMenu,
         backgroundColor: const Color(0xFFFF6B6B),
-        child: const Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.menu, color: Colors.white),
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -352,6 +438,22 @@ class _UsersListPageState extends State<UsersListPage> {
                 ),
               ),
             ),
+            if (showOnlyFavorites)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: _showAllUsers,
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      label: const Text(
+                        'Back to All Users',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
