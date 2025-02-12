@@ -140,7 +140,7 @@ class _UsersListPageState extends State<UsersListPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Delete User'),
+          title: const Text('Membership Finished'),
           content: Text(
               'Are you sure you want to delete ${filteredUsers[index]['name']}?'),
           actions: [

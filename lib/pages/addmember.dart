@@ -1,9 +1,9 @@
-// add_member_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 
 class AddMemberPage extends StatefulWidget {
-  final Function(Map<String, String>) onAddMember;
+  final Function(Map<String, dynamic>) onAddMember;
   final Map<String, String>? initialData;
 
   const AddMemberPage({
@@ -22,7 +22,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
   final _emailController = TextEditingController();
   final _mobileController = TextEditingController();
   final _addressController = TextEditingController();
-  final _ageController = TextEditingController();
+  final _dateOfBirthController = TextEditingController();
   final _professionController = TextEditingController();
   final _castController = TextEditingController();
   final _countryController = TextEditingController();
@@ -30,6 +30,8 @@ class _AddMemberPageState extends State<AddMemberPage> {
   String selectedGender = 'Male';
   String selectedMaritalStatus = 'Single';
   String selectedSalaryRange = 'Below ₹10,000';
+  DateTime? selectedDate;
+  int? calculatedAge;
 
   final List<String> genderOptions = ['Male', 'Female', 'Other'];
   final List<String> maritalStatus = [
@@ -54,7 +56,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
       _emailController.text = widget.initialData!['email'] ?? '';
       _mobileController.text = widget.initialData!['mobile'] ?? '';
       _addressController.text = widget.initialData!['address'] ?? '';
-      _ageController.text = widget.initialData!['age'] ?? '';
+      _dateOfBirthController.text = widget.initialData!['dateOfBirth'] ?? '';
       _professionController.text = widget.initialData!['profession'] ?? '';
       _castController.text = widget.initialData!['cast'] ?? '';
       _countryController.text = widget.initialData!['country'] ?? '';
@@ -62,6 +64,29 @@ class _AddMemberPageState extends State<AddMemberPage> {
       selectedMaritalStatus = widget.initialData!['maritalStatus'] ?? 'Single';
       selectedSalaryRange =
           widget.initialData!['salaryRange'] ?? 'Below ₹10,000';
+
+      if (widget.initialData!['dateOfBirth'] != null) {
+        try {
+          selectedDate = DateFormat('dd/MM/yyyy')
+              .parse(widget.initialData!['dateOfBirth']!);
+          _calculateAge();
+        } catch (e) {}
+      }
+    }
+  }
+
+  void _calculateAge() {
+    if (selectedDate != null) {
+      DateTime currentDate = DateTime.now();
+      int age = currentDate.year - selectedDate!.year;
+      if (currentDate.month < selectedDate!.month ||
+          (currentDate.month == selectedDate!.month &&
+              currentDate.day < selectedDate!.day)) {
+        age--;
+      }
+      setState(() {
+        calculatedAge = age;
+      });
     }
   }
 
@@ -86,15 +111,48 @@ class _AddMemberPageState extends State<AddMemberPage> {
     return null;
   }
 
-  String? validateAge(String? value) {
+  String? validateDateOfBirth(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Age is required';
+      return 'Date of Birth is required';
     }
-    final age = int.tryParse(value);
-    if (age == null || age < 18 || age > 100) {
-      return 'Enter a valid age between 18 and 100';
+    if (selectedDate == null) {
+      return 'Please select a valid date';
+    }
+    if (calculatedAge! < 18 || calculatedAge! > 100) {
+      return 'Age must be between 18 and 100 years';
     }
     return null;
+  }
+
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate:
+          selectedDate ?? DateTime.now().subtract(const Duration(days: 6570)),
+      firstDate: DateTime.now().subtract(const Duration(days: 36500)),
+      lastDate: DateTime.now().subtract(const Duration(days: 6570)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: const Color(0xFF4ECDC4),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+        _dateOfBirthController.text = DateFormat('dd/MM/yyyy').format(picked);
+        _calculateAge();
+      });
+    }
   }
 
   void _submitForm() {
@@ -104,7 +162,8 @@ class _AddMemberPageState extends State<AddMemberPage> {
         'email': _emailController.text,
         'mobile': _mobileController.text,
         'address': _addressController.text,
-        'age': _ageController.text,
+        'dateOfBirth': _dateOfBirthController.text,
+        'age': calculatedAge.toString(),
         'gender': selectedGender,
         'profession': _professionController.text,
         'cast': _castController.text,
@@ -114,7 +173,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
       };
 
       widget.onAddMember(memberData);
-      Navigator.pop(context, true);
+      Navigator.pop(context, memberData);
     }
   }
 
@@ -124,6 +183,8 @@ class _AddMemberPageState extends State<AddMemberPage> {
     required String? Function(String?) validator,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    bool readOnly = false,
+    VoidCallback? onTap,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -138,10 +199,15 @@ class _AddMemberPageState extends State<AddMemberPage> {
           fillColor: Colors.white,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          suffixIcon: onTap != null
+              ? Icon(Icons.calendar_today, color: Color(0xFF4ECDC4))
+              : null,
         ),
         validator: validator,
         keyboardType: keyboardType,
         inputFormatters: inputFormatters,
+        readOnly: readOnly,
+        onTap: onTap,
       ),
     );
   }
@@ -239,14 +305,29 @@ class _AddMemberPageState extends State<AddMemberPage> {
                               ? 'Address is required'
                               : null,
                         ),
-                        _buildTextField(
-                          controller: _ageController,
-                          label: 'Age',
-                          validator: validateAge,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(3),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildTextField(
+                              controller: _dateOfBirthController,
+                              label: 'Date of Birth',
+                              validator: validateDateOfBirth,
+                              readOnly: true,
+                              onTap: _selectDate,
+                            ),
+                            if (calculatedAge != null)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(left: 16, bottom: 16),
+                                child: Text(
+                                  'Age: $calculatedAge years',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                         _buildDropdownField(
@@ -343,7 +424,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
     _emailController.dispose();
     _mobileController.dispose();
     _addressController.dispose();
-    _ageController.dispose();
+    _dateOfBirthController.dispose();
     _professionController.dispose();
     _castController.dispose();
     _countryController.dispose();

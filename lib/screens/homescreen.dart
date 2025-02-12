@@ -4,6 +4,7 @@ import 'package:metromony/pages/aboutus.dart';
 import 'package:metromony/pages/favortitemember.dart';
 import 'package:metromony/pages/editmember.dart';
 import 'package:metromony/pages/addmember.dart';
+import 'package:metromony/pages/membership.dart';
 import 'package:metromony/pages/userlist.dart';
 
 class MainScreen extends StatefulWidget {
@@ -32,7 +33,7 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     _pages = [
       UsersListPage(onFavoriteUpdate: updateFavoriteUsers),
-      FavoriteMember(users: favoriteUsers),
+      MembershipPage(),
       AboutUsPage(),
     ];
   }
@@ -147,7 +148,7 @@ class _MainScreenState extends State<MainScreen> {
           items: [
             Icon(Icons.person_add,
                 size: 30, color: _page == 0 ? Colors.white : _gradients[0][0]),
-            Icon(Icons.favorite,
+            Icon(Icons.verified,
                 size: 30, color: _page == 1 ? Colors.white : _gradients[1][0]),
             Icon(Icons.info,
                 size: 30, color: _page == 2 ? Colors.white : _gradients[2][0]),
