@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:metromony/screens/splashscreen.dart';
-
+import 'package:metrimony_app/screens/splashscreen.dart';
 void main() {
   runApp(const MainApp());
 }

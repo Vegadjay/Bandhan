@@ -1,12 +1,12 @@
-// edit_member_page.dart
 import 'package:flutter/material.dart';
+import '../db/data_access.dart';
 
 class EditMemberPage extends StatefulWidget {
-  final Map<String, String> memberData;
+  final int memberId;
 
   const EditMemberPage({
     super.key,
-    required this.memberData,
+    required this.memberId,
   });
 
   @override
@@ -15,12 +15,22 @@ class EditMemberPage extends StatefulWidget {
 
 class _EditMemberPageState extends State<EditMemberPage> {
   final _formKey = GlobalKey<FormState>();
-  late Map<String, String> _editedData;
+  final MyDatabase db = MyDatabase();
+  late Map<String, dynamic> _editedData;
 
   @override
   void initState() {
     super.initState();
-    _editedData = Map<String, String>.from(widget.memberData);
+    _loadMemberData();
+  }
+
+  Future<void> _loadMemberData() async {
+    final member = await db.getUserById(widget.memberId);
+    if (member != null) {
+      setState(() {
+        _editedData = Map<String, dynamic>.from(member);
+      });
+    }
   }
 
   Widget _buildTextField(String label, String field, IconData icon) {
@@ -135,17 +145,18 @@ class _EditMemberPageState extends State<EditMemberPage> {
               _buildTextField('Country', 'country', Icons.public_outlined),
               _buildDropdownField(
                 'Marital Status',
-                'maritalStatus',
+                'marital_status',
                 Icons.favorite_outline,
                 ['Single', 'Married', 'Divorced', 'Widowed'],
               ),
               _buildTextField(
-                  'Salary Range', 'salaryRange', Icons.currency_rupee),
+                  'Salary Range', 'salary_range', Icons.currency_rupee),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    Navigator.pop(context, _editedData);
+                    await db.updateUser(widget.memberId, _editedData);
+                    Navigator.pop(context, true);
                   }
                 },
                 style: ElevatedButton.styleFrom(

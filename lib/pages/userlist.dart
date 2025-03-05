@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:metromony/pages/addmember.dart';
-import 'addmember.dart';
+import '../db/data_access.dart';
+import 'addmember.dart'; // Import the database helper
 
 class UsersListPage extends StatefulWidget {
   final Function(List) onFavoriteUpdate;
@@ -13,45 +13,24 @@ class UsersListPage extends StatefulWidget {
 }
 
 class _UsersListPageState extends State<UsersListPage> {
-  List users = [
-    {
-      'name': 'John Doe',
-      'email': 'john@example.com',
-      'mobile': '1234567890',
-      'address': '123 Main St, New York',
-      'age': '30',
-      'gender': 'Male',
-      'profession': 'Software Engineer',
-      'cast': 'Hindu',
-      'country': 'USA',
-      'maritalStatus': 'Single',
-      'salaryRange': '₹50,000 - ₹80,000',
-      'isFavorite': 'false',
-    },
-    {
-      'name': 'Jane Smith',
-      'email': 'jane@example.com',
-      'mobile': '9876543210',
-      'address': '456 Park Ave, London',
-      'age': '28',
-      'gender': 'Female',
-      'profession': 'Data Scientist',
-      'cast': 'Christian',
-      'country': 'UK',
-      'maritalStatus': 'Single',
-      'salaryRange': '₹60,000 - ₹90,000',
-      'isFavorite': 'false',
-    }
-  ];
-
+  List<Map<String, dynamic>> users = [];
   String searchQuery = '';
-  List filteredUsers = [];
+  List<Map<String, dynamic>> filteredUsers = [];
   bool showOnlyFavorites = false;
+  final MyDatabase db = MyDatabase();
 
   @override
   void initState() {
     super.initState();
-    filteredUsers = List.from(users);
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    final usersFromDb = await db.getUsers();
+    setState(() {
+      users = usersFromDb;
+      filteredUsers = List.from(users);
+    });
   }
 
   void _filterUsers(String query) {
@@ -65,7 +44,7 @@ class _UsersListPageState extends State<UsersListPage> {
         } else {
           filteredUsers = users.where((user) {
             final name = user['name']?.toLowerCase() ?? '';
-            final age = user['age']?.toLowerCase() ?? '';
+            final age = user['age']?.toString() ?? '';
             final profession = user['profession']?.toLowerCase() ?? '';
             final gender = user['gender']?.toLowerCase() ?? '';
 
@@ -82,8 +61,7 @@ class _UsersListPageState extends State<UsersListPage> {
   void _showFavoriteUsers() {
     setState(() {
       showOnlyFavorites = true;
-      filteredUsers =
-          users.where((user) => user['isFavorite'] == 'true').toList();
+      filteredUsers = users.where((user) => user['isfavorite'] == 1).toList();
     });
   }
 
@@ -94,38 +72,23 @@ class _UsersListPageState extends State<UsersListPage> {
     });
   }
 
-  void _toggleFavorite(int index) {
-    setState(() {
-      final userIndex = users.indexOf(filteredUsers[index]);
-      users[userIndex]['isFavorite'] =
-          (users[userIndex]['isFavorite'] == 'true' ? 'false' : 'true');
-      if (showOnlyFavorites) {
-        _showFavoriteUsers();
-      } else {
-        filteredUsers = List.from(users);
-        _filterUsers(searchQuery);
-      }
-      widget.onFavoriteUpdate(users);
-    });
+  Future<void> _toggleFavorite(int index) async {
+    final user = filteredUsers[index];
+    final isFavorite = user['isfavorite'] == 1 ? 0 : 1;
+    await db.updateUserFavorite(user['id'], isFavorite);
+    _loadUsers();
   }
 
-  void _addNewUser() async {
+  Future<void> _addNewUser() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddMemberPage(
-          onAddMember: (userData) {
-            userData['isFavorite'] = 'false';
-            setState(() {
-              users.add(userData);
-              _filterUsers(searchQuery);
-            });
-          },
-        ),
+        builder: (context) => AddMemberPage(),
       ),
     );
 
     if (result != null) {
+      _loadUsers();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('User added successfully'),
@@ -135,26 +98,23 @@ class _UsersListPageState extends State<UsersListPage> {
     }
   }
 
-  void _deleteUser(int index) {
+  Future<void> _deleteUser(int index) async {
+    final user = filteredUsers[index];
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Membership Finished'),
-          content: Text(
-              'Are you sure you want to delete ${filteredUsers[index]['name']}?'),
+          title: const Text('Delete User'),
+          content: Text('Are you sure you want to delete ${user['name']}?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
             TextButton(
-              onPressed: () {
-                setState(() {
-                  final userIndex = users.indexOf(filteredUsers[index]);
-                  users.removeAt(userIndex);
-                  _filterUsers(searchQuery);
-                });
+              onPressed: () async {
+                await db.deleteUser(user['id']);
+                _loadUsers();
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -192,6 +152,7 @@ class _UsersListPageState extends State<UsersListPage> {
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 color: Color(0xFFFF6B6B),
+                // color: Color(0xFFFF6B6B),
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
@@ -212,7 +173,7 @@ class _UsersListPageState extends State<UsersListPage> {
                   ),
                   IconButton(
                     icon: Icon(
-                      user['isFavorite'] == 'true'
+                      user['isfavorite'] == 1
                           ? Icons.favorite
                           : Icons.favorite_border,
                       color: Colors.white,
@@ -266,9 +227,9 @@ class _UsersListPageState extends State<UsersListPage> {
                     _buildDetailItem(
                         Icons.public_outlined, 'Country', user['country']!),
                     _buildDetailItem(Icons.favorite_outline, 'Marital Status',
-                        user['maritalStatus']!),
+                        user['marital_status']!),
                     _buildDetailItem(Icons.currency_rupee, 'Salary Range',
-                        user['salaryRange']!),
+                        user['salary_range']!),
                   ],
                 ),
               ),
@@ -279,26 +240,19 @@ class _UsersListPageState extends State<UsersListPage> {
     );
   }
 
-  void _editUser(int index) async {
+  Future<void> _editUser(int index) async {
+    final user = filteredUsers[index];
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => AddMemberPage(
-          onAddMember: (userData) {
-            userData['isFavorite'] =
-                filteredUsers[index]['isFavorite']!; // Preserve favorite status
-            setState(() {
-              final userIndex = users.indexOf(filteredUsers[index]);
-              users[userIndex] = userData;
-              _filterUsers(searchQuery);
-            });
-          },
-          initialData: filteredUsers[index],
+          memberId: user['id'],
         ),
       ),
     );
 
     if (result != null) {
+      _loadUsers();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('User updated successfully'),
@@ -378,6 +332,14 @@ class _UsersListPageState extends State<UsersListPage> {
                   _showFavoriteUsers();
                 },
               ),
+              ListTile(
+                leading: const Icon(Icons.verified, color: Color(0xFFFF6B6B)),
+                title: const Text('Show all members'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _addNewUser();
+                },
+              ),
               if (showOnlyFavorites)
                 ListTile(
                   leading: const Icon(Icons.people, color: Color(0xFFFF6B6B)),
@@ -424,7 +386,7 @@ class _UsersListPageState extends State<UsersListPage> {
                 decoration: InputDecoration(
                   hintText: 'Search by name, age, profession, or gender',
                   prefixIcon:
-                      const Icon(Icons.search, color: Color(0xFFFF6B6B)),
+                  const Icon(Icons.search, color: Color(0xFFFF6B6B)),
                   filled: true,
                   fillColor: Colors.white,
                   border: OutlineInputBorder(
@@ -487,23 +449,23 @@ class _UsersListPageState extends State<UsersListPage> {
                           fontSize: 18,
                         ),
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 8),
-                          Text(user['profession'] ?? ''),
-                          Text(user['email'] ?? ''),
-                          Text(user['mobile'] ?? ''),
-                          Text('${user['age']} years • ${user['gender']}'),
-                        ],
-                      ),
+                      // subtitle: Column(
+                      //   crossAxisAlignment: CrossAxisAlignment.start,
+                      //   children: [
+                      //     const SizedBox(height: 8),
+                      //     Text(user['profession'] ?? ''),
+                      //     Text(user['email'] ?? ''),
+                      //     Text(user['mobile'] ?? ''),
+                      //     Text('${user['age']} years • ${user['gender']}'),
+                      //   ],
+                      // ),
                       onTap: () => _showUserDetails(index),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
                             icon: Icon(
-                              user['isFavorite'] == 'true'
+                              user['isfavorite'] == 1
                                   ? Icons.favorite
                                   : Icons.favorite_border,
                               color: const Color(0xFFFF6B6B),

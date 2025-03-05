@@ -1,0 +1,2 @@
+D:/SEM-4/matrimony_jay/android/app/.cxx/Debug/3h4fkq6e/x86_64/CMakeFiles/edit_cache.dir
+D:/SEM-4/matrimony_jay/android/app/.cxx/Debug/3h4fkq6e/x86_64/CMakeFiles/rebuild_cache.dir

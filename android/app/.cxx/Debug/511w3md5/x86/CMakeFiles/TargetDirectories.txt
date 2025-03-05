@@ -1,0 +1,2 @@
+/home/jay-vegad/Desktop/app/app/matrimony_jay/android/app/.cxx/Debug/511w3md5/x86/CMakeFiles/edit_cache.dir
+/home/jay-vegad/Desktop/app/app/matrimony_jay/android/app/.cxx/Debug/511w3md5/x86/CMakeFiles/rebuild_cache.dir

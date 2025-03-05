@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'dart:async';
 
-import 'package:metromony/screens/homescreen.dart';
-
+import 'homescreen.dart';
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -14,7 +14,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(Duration(seconds: 3), () {
+    Timer(Duration(seconds: 2), () {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => MainScreen()),
       );
@@ -25,18 +25,20 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Center(
+      body: Container(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Image.asset(
-              '/logo.png',
-              width: 550,
-              height: 550,
+              'assets/logo.png',
+              width: 350,
+              height: 350,
             ),
             const SizedBox(height: 20),
             const Text(
-              'Welcome to Bandhan Matromony!',
+              'Welcome to Bandhan Matrimony!',
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -44,11 +46,16 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            // Loading indicator
-            const CircularProgressIndicator(),
+            Lottie.asset(
+              'assets/loading_animation.json', 
+              frameRate: FrameRate(60),// Make sure the file is inside your assets folder
+              width: 150,
+              height: 150,
+            ),
           ],
         ),
       ),
+
     );
   }
 }

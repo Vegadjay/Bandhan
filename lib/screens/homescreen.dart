@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
-import 'package:metromony/pages/aboutus.dart';
-import 'package:metromony/pages/favortitemember.dart';
-import 'package:metromony/pages/editmember.dart';
-import 'package:metromony/pages/addmember.dart';
-import 'package:metromony/pages/membership.dart';
-import 'package:metromony/pages/userlist.dart';
+
+import '../pages/aboutus.dart';
+import '../pages/favortitemember.dart';
+import '../pages/membership.dart';
+import '../pages/userlist.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -33,6 +32,7 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     _pages = [
       UsersListPage(onFavoriteUpdate: updateFavoriteUsers),
+      FavoriteMember(),
       MembershipPage(),
       AboutUsPage(),
     ];
@@ -41,6 +41,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<List<Color>> _gradients = [
     [Color(0xFFFF6B6B), Color(0xFFFF8E8E)],
     [Color(0xFF4ECDC4), Color(0xFF556270)],
+    [Color(0xFFFF4E0B), Color(0xFFFF4105)],
     [Color(0xFFFFBE0B), Color(0xFFFF9B05)],
     [Color(0xFFFF4B2B), Color(0xFFFF416C)],
   ];
@@ -48,6 +49,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<List<Color>> _appBarGradients = [
     [Color(0xFFFF416C), Color(0xFFFF4B2B)],
     [Color(0xFF556270), Color(0xFF4ECDC4)],
+    [Color(0xFFFF4E0B), Color(0xFFFF4105)],
     [Color(0xFFFF9B05), Color(0xFFFFBE0B)],
     [Color(0xFFFF4B2B), Color(0xFFFF416C)],
   ];
@@ -148,10 +150,12 @@ class _MainScreenState extends State<MainScreen> {
           items: [
             Icon(Icons.person_add,
                 size: 30, color: _page == 0 ? Colors.white : _gradients[0][0]),
-            Icon(Icons.verified,
+            Icon(Icons.favorite,
                 size: 30, color: _page == 1 ? Colors.white : _gradients[1][0]),
-            Icon(Icons.info,
+            Icon(Icons.verified,
                 size: 30, color: _page == 2 ? Colors.white : _gradients[2][0]),
+            Icon(Icons.info,
+                size: 30, color: _page == 3 ? Colors.white : _gradients[3][0]),
           ],
           onTap: (index) => setState(() => _page = index),
         ),

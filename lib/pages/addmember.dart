@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../db/data_access.dart';
 import 'package:intl/intl.dart';
 
 class AddMemberPage extends StatefulWidget {
-  final Function(Map<String, dynamic>) onAddMember;
-  final Map<String, String>? initialData;
+  final int? memberId;
 
-  const AddMemberPage({
-    super.key,
-    required this.onAddMember,
-    this.initialData,
-  });
+  const AddMemberPage({super.key, this.memberId});
 
   @override
   _AddMemberPageState createState() => _AddMemberPageState();
@@ -18,14 +14,16 @@ class AddMemberPage extends StatefulWidget {
 
 class _AddMemberPageState extends State<AddMemberPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _mobileController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _dateOfBirthController = TextEditingController();
-  final _professionController = TextEditingController();
-  final _castController = TextEditingController();
-  final _countryController = TextEditingController();
+  final MyDatabase db = MyDatabase();
+
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController mobileController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+  final TextEditingController dateOfBirthController = TextEditingController();
+  final TextEditingController professionController = TextEditingController();
+  final TextEditingController castController = TextEditingController();
+  final TextEditingController countryController = TextEditingController();
 
   String selectedGender = 'Male';
   String selectedMaritalStatus = 'Single';
@@ -51,27 +49,34 @@ class _AddMemberPageState extends State<AddMemberPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.initialData != null) {
-      _nameController.text = widget.initialData!['name'] ?? '';
-      _emailController.text = widget.initialData!['email'] ?? '';
-      _mobileController.text = widget.initialData!['mobile'] ?? '';
-      _addressController.text = widget.initialData!['address'] ?? '';
-      _dateOfBirthController.text = widget.initialData!['dateOfBirth'] ?? '';
-      _professionController.text = widget.initialData!['profession'] ?? '';
-      _castController.text = widget.initialData!['cast'] ?? '';
-      _countryController.text = widget.initialData!['country'] ?? '';
-      selectedGender = widget.initialData!['gender'] ?? 'Male';
-      selectedMaritalStatus = widget.initialData!['maritalStatus'] ?? 'Single';
-      selectedSalaryRange =
-          widget.initialData!['salaryRange'] ?? 'Below ₹10,000';
+    if (widget.memberId != null) {
+      _loadMemberData(widget.memberId!);
+    }
+  }
 
-      if (widget.initialData!['dateOfBirth'] != null) {
-        try {
-          selectedDate = DateFormat('dd/MM/yyyy')
-              .parse(widget.initialData!['dateOfBirth']!);
-          _calculateAge();
-        } catch (e) {}
-      }
+  Future<void> _loadMemberData(int id) async {
+    final member = await db.getUserById(id);
+    if (member != null) {
+      setState(() {
+        nameController.text = member['name'] ?? '';
+        emailController.text = member['email'] ?? '';
+        mobileController.text = member['mobile'] ?? '';
+        addressController.text = member['address'] ?? '';
+        dateOfBirthController.text = member['dob'] ?? '';
+        professionController.text = member['profession'] ?? '';
+        castController.text = member['cast'] ?? '';
+        countryController.text = member['country'] ?? '';
+        selectedGender = member['gender'] ?? 'Male';
+        selectedMaritalStatus = member['marital_status'] ?? 'Single';
+        selectedSalaryRange = member['salary_range'] ?? 'Below ₹10,000';
+
+        if (member['dob'] != null) {
+          try {
+            selectedDate = DateFormat('dd/MM/yyyy').parse(member['dob']);
+            _calculateAge();
+          } catch (e) {}
+        }
+      });
     }
   }
 
@@ -128,7 +133,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate:
-          selectedDate ?? DateTime.now().subtract(const Duration(days: 6570)),
+      selectedDate ?? DateTime.now().subtract(const Duration(days: 6570)),
       firstDate: DateTime.now().subtract(const Duration(days: 36500)),
       lastDate: DateTime.now().subtract(const Duration(days: 6570)),
       builder: (context, child) {
@@ -149,31 +154,9 @@ class _AddMemberPageState extends State<AddMemberPage> {
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
-        _dateOfBirthController.text = DateFormat('dd/MM/yyyy').format(picked);
+        dateOfBirthController.text = DateFormat('dd/MM/yyyy').format(picked);
         _calculateAge();
       });
-    }
-  }
-
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      final memberData = {
-        'name': _nameController.text,
-        'email': _emailController.text,
-        'mobile': _mobileController.text,
-        'address': _addressController.text,
-        'dateOfBirth': _dateOfBirthController.text,
-        'age': calculatedAge.toString(),
-        'gender': selectedGender,
-        'profession': _professionController.text,
-        'cast': _castController.text,
-        'country': _countryController.text,
-        'maritalStatus': selectedMaritalStatus,
-        'salaryRange': selectedSalaryRange,
-      };
-
-      widget.onAddMember(memberData);
-      Navigator.pop(context, memberData);
     }
   }
 
@@ -198,7 +181,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
           filled: true,
           fillColor: Colors.white,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           suffixIcon: onTap != null
               ? Icon(Icons.calendar_today, color: Color(0xFF4ECDC4))
               : null,
@@ -230,7 +213,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
           filled: true,
           fillColor: Colors.white,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
         items: items.map((String item) {
           return DropdownMenuItem<String>(
@@ -243,12 +226,38 @@ class _AddMemberPageState extends State<AddMemberPage> {
     );
   }
 
+  void _submitForm() async {
+    if (_formKey.currentState!.validate()) {
+      final memberData = {
+        'name': nameController.text,
+        'email': emailController.text,
+        'mobile': mobileController.text,
+        'address': addressController.text,
+        'dob': dateOfBirthController.text,
+        'age': calculatedAge,
+        'gender': selectedGender,
+        'profession': professionController.text,
+        'cast': castController.text,
+        'country': countryController.text,
+        'marital_status': selectedMaritalStatus,
+        'salary_range': selectedSalaryRange,
+      };
+
+      if (widget.memberId == null) {
+        await db.insertUser(memberData);
+      } else {
+        await db.updateUser(widget.memberId!, memberData);
+      }
+
+      Navigator.pop(context, true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-            Text(widget.initialData == null ? 'Add New Member' : 'Edit Member'),
+        title: Text(widget.memberId == null ? 'Add New Member' : 'Edit Member'),
         backgroundColor: const Color(0xFF4ECDC4),
         foregroundColor: Colors.white,
       ),
@@ -276,20 +285,20 @@ class _AddMemberPageState extends State<AddMemberPage> {
                     child: Column(
                       children: [
                         _buildTextField(
-                          controller: _nameController,
+                          controller: nameController,
                           label: 'Full Name',
                           validator: (value) => value?.isEmpty ?? true
                               ? 'Name is required'
                               : null,
                         ),
                         _buildTextField(
-                          controller: _emailController,
+                          controller: emailController,
                           label: 'Email',
                           validator: validateEmail,
                           keyboardType: TextInputType.emailAddress,
                         ),
                         _buildTextField(
-                          controller: _mobileController,
+                          controller: mobileController,
                           label: 'Mobile Number',
                           validator: validateMobile,
                           keyboardType: TextInputType.phone,
@@ -299,7 +308,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
                           ],
                         ),
                         _buildTextField(
-                          controller: _addressController,
+                          controller: addressController,
                           label: 'Address',
                           validator: (value) => value?.isEmpty ?? true
                               ? 'Address is required'
@@ -309,7 +318,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildTextField(
-                              controller: _dateOfBirthController,
+                              controller: dateOfBirthController,
                               label: 'Date of Birth',
                               validator: validateDateOfBirth,
                               readOnly: true,
@@ -318,7 +327,7 @@ class _AddMemberPageState extends State<AddMemberPage> {
                             if (calculatedAge != null)
                               Padding(
                                 padding:
-                                    const EdgeInsets.only(left: 16, bottom: 16),
+                                const EdgeInsets.only(left: 16, bottom: 16),
                                 child: Text(
                                   'Age: $calculatedAge years',
                                   style: TextStyle(
@@ -341,21 +350,21 @@ class _AddMemberPageState extends State<AddMemberPage> {
                           },
                         ),
                         _buildTextField(
-                          controller: _professionController,
+                          controller: professionController,
                           label: 'Profession',
                           validator: (value) => value?.isEmpty ?? true
                               ? 'Profession is required'
                               : null,
                         ),
                         _buildTextField(
-                          controller: _castController,
+                          controller: castController,
                           label: 'Cast',
                           validator: (value) => value?.isEmpty ?? true
                               ? 'Cast is required'
                               : null,
                         ),
                         _buildTextField(
-                          controller: _countryController,
+                          controller: countryController,
                           label: 'Country',
                           validator: (value) => value?.isEmpty ?? true
                               ? 'Country is required'
@@ -396,9 +405,9 @@ class _AddMemberPageState extends State<AddMemberPage> {
                               elevation: 4,
                             ),
                             child: Text(
-                              widget.initialData == null
+                              widget.memberId == null
                                   ? 'Add Member'
-                                  : 'Save Changes',
+                                  : 'Update Member',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -420,14 +429,14 @@ class _AddMemberPageState extends State<AddMemberPage> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _mobileController.dispose();
-    _addressController.dispose();
-    _dateOfBirthController.dispose();
-    _professionController.dispose();
-    _castController.dispose();
-    _countryController.dispose();
+    nameController.dispose();
+    emailController.dispose();
+    mobileController.dispose();
+    addressController.dispose();
+    dateOfBirthController.dispose();
+    professionController.dispose();
+    castController.dispose();
+    countryController.dispose();
     super.dispose();
   }
 }
